@@ -12,7 +12,7 @@ O processo de resolução foi dividido em etapas sequenciais para decodificar ca
 
 ### 1. Análise Inicial e Primeira Camada (Base64)
 
-Ao abrir o arquivo `enc_flag` utilizando o editor de código `**Visual Studio Code**`, o conteúdo é revelado:
+Ao abrir o arquivo `enc_flag` utilizando o editor de código `Visual Studio Code`, o conteúdo é revelado:
 
 ```
 YidkM0JxZGtwQlRYdHFhR3g2YUhsZmF6TnFlVGwzWVROclgyZzBOMm8yYXpZNWZRPT0nCg==
