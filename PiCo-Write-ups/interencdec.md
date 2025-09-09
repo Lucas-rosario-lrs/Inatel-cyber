@@ -4,7 +4,7 @@ Este documento detalha o processo de resolução do desafio CTF **interencdec**,
 
 ## 📝 Descrição do Desafio
 
-O desafio consiste em um único arquivo, chamado `enc_flag`, com a seguinte pergunta: "Can you get the real meaning from this file?" (Você consegue extrair o significado real deste arquivo?).
+O desafio consiste em um único arquivo, chamado `enc_flag`, com a seguinte pergunta: `"Can you get the real meaning from this file?"`
 
 ## 🕵️‍♂️ Análise e Resolução
 
@@ -12,7 +12,7 @@ O processo de resolução foi dividido em etapas sequenciais para decodificar ca
 
 ### 1. Análise Inicial e Primeira Camada (Base64)
 
-Ao abrir o arquivo `enc_flag` utilizando um editor de código como o **Visual Studio Code**, o conteúdo é revelado:
+Ao abrir o arquivo `enc_flag` utilizando o editor de código `**Visual Studio Code**`, o conteúdo é revelado:
 
 ```
 YidkM0JxZGtwQlRYdHFhR3g2YUhsZmF6TnFlVGwzWVROclgyZzBOMm8yYXpZNWZRPT0nCg==
@@ -22,9 +22,9 @@ A presença de caracteres maiúsculos, minúsculos, números e o preenchimento `
 
 ### 2. Segunda Camada (Base64 aninhado)
 
-Decodificando a string inicial, obtemos uma nova "string de bytes" do Python:
+Decodificando a string inicial, obtemos uma nova string de bytes, que parece base64 também, mas dentro de aspas:
 
-```python
+```
 b'dM0JqdkpBTXhqaGx6aHlfazNqelT3YTNRclX2g0N2o2azY5fQ=='
 ```
 
@@ -38,7 +38,7 @@ Esta é a string cifrada, a um passo da flag final.
 
 ### 3. Decifragem Final (Cifra de César)
 
-A string final estava protegida por uma **Cifra de César**. Este tipo de cifra funciona deslocando cada caractere por um número fixo de posições no alfabeto (a "chave").
+A string final estava protegida por uma **Cifra de César**. Na qual fui apresentada no último CTF do Inatel.
 
 Aplicando a rotação correta para cada caractere, a mensagem é finalmente decifrada, revelando a flag.
 
