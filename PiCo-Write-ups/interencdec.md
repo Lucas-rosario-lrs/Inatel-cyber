@@ -54,8 +54,3 @@ Após reverter todas as camadas de codificação e decifrar a Cifra de César, a
 ```
 picoCTF{caesar_d3cr9pt3d_a47c6d69}
 ```
-
-## 💡 Conceitos Utilizados
-
-* **Base64:** Um esquema de codificação para representar dados binários em formato de texto ASCII, facilmente identificável pela sua gama de caracteres e pelo uso do caractere `=` como preenchimento.
-* **Cifra de César:** Uma das cifras de substituição mais simples, onde cada letra do texto é trocada por outra que se encontra um número fixo de posições à frente no alfabeto.
