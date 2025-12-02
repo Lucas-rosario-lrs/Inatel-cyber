@@ -369,10 +369,14 @@ Como a operação XOR é reversível (`A XOR B = C` implica `A XOR C = B`), util
 
 Criei um script PHP para fazer o XOR entre esses dois valores e descobrir a chave secreta utilizada pelo servidor.
 
+![Cálculo do XOR e geração do cookie](images/natas11-cookie.png)
+
 O script revelou que a chave de criptografia era `eDWo`.
 Com a chave em mãos, o próprio script gerou um novo cookie malicioso contendo o JSON com `"showpassword"=>"yes"`.
 
 Injetei este novo cookie no navegador (substituindo o valor original na aba Application \> Cookies), recarreguei a página e a senha foi revelada.
+
+![Flag capturada e cookie modificado no navegador](images/natas11-flag.png)
 
 ### Raciocínio (Vulnerabilidade)
 
