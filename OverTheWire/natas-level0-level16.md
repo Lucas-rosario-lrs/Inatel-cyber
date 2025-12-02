@@ -147,7 +147,7 @@ Enviei a requisição para o módulo "Repeater" do Burp Suite e alterei manualme
 
 Ao reenviar a requisição modificada, o servidor validou a origem falsa e retornou a página contendo a senha.
 
-![Flag no Repeater](images/natas4-flag.jpg)
+![Flag no Repeater](images/natas4-flag.png)
 
 ### Raciocínio (Vulnerabilidade)
 
