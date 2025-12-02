@@ -392,7 +392,7 @@ Tentei injetar este novo cookie no navegador de diversas formas:
 2. Interceptando a requisição com Burp Suite e modificando o cabeçalho `Cookie`.
 3. Utilizando Burp Suite
 
-![Tentativa de injeção do cookie](images/tentativasnatas11.png)
+![Tentativa de injeção do cookie](images/tentativanatas11.png)
 
 No entanto, não obtive êxito na exploração final. O servidor continuou carregando os dados padrão ou rejeitando a entrada.
 
