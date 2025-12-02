@@ -347,60 +347,37 @@ Pesquisei sobre **"Grep argument injection"** e **"Bypassing command injection f
 
 ---
 
-# Natas Level 11 (Tentativa)
+# Natas Level 11
 
 ### Objetivo
+
 Acessar a senha para o nível 12. O site permite alterar a cor de fundo da página e informa que "Cookies are protected with XOR encryption" (Cookies são protegidos com encriptação XOR).
-![Cookie criptografado no navegador](images/natas11-dica1.png)
-### Análise Inicial
-Ao definir uma cor de fundo, o site salva um cookie chamado `data`.
 
-O valor desse cookie parece ser uma string aleatória em Base64. Analisando o código-fonte ("View sourcecode"), notei que o sistema utiliza uma criptografia XOR simples para proteger os dados.
+### Solução
 
-![Código fonte mostrando a lógica XOR](images/natas11-dica2.png)
+Ao definir uma cor de fundo, o site salva um cookie chamado `data` contendo um valor codificado. Analisando o código-fonte ("View sourcecode"), identifiquei que o sistema utiliza uma criptografia XOR simples com uma chave fixa para proteger os dados do cookie.
 
 A função `loadData` descriptografa o cookie e verifica o conteúdo de um array JSON:
 `$defaultdata = array( "showpassword"=>"no", "bgcolor"=>"#ffffff");`
 
-O objetivo claro é alterar o valor `showpassword` de `"no"` para `"yes"`.
+Para obter a senha, é necessário alterar o valor `showpassword` de `"no"` para `"yes"`.
 
-### Estratégia de Exploração (Criptoanálise)
-A vulnerabilidade reside na natureza da operação XOR. É uma operação reversível e comutativa.
-A lógica do servidor é:
-`Texto_Original XOR Chave = Cookie_Cifrado`
+Como a operação XOR é reversível (`A XOR B = C` implica `A XOR C = B`), utilizei um ataque de **Known Plaintext** (Texto Plano Conhecido). Eu possuía:
 
-Como eu tenho o `Texto_Original` (o array padrão que vi no código) e tenho o `Cookie_Cifrado` (que peguei no navegador), posso inverter a operação para descobrir a chave secreta:
-`Texto_Original XOR Cookie_Cifrado = Chave`
+1.  **O Texto Plano:** O JSON padrão que vi no código (`{"showpassword":"no"...}`).
+2.  **O Texto Cifrado:** O cookie gerado pelo site para esse padrão.
 
-### Execução
-Desenvolvi um script PHP local para realizar essa engenharia reversa e descobrir a chave.
+Criei um script PHP para fazer o XOR entre esses dois valores e descobrir a chave secreta utilizada pelo servidor.
 
-![Script PHP para descobrir a chave](images/natas11-dica4.png)
+O script revelou que a chave de criptografia era `eDWo`.
+Com a chave em mãos, o próprio script gerou um novo cookie malicioso contendo o JSON com `"showpassword"=>"yes"`.
 
-O script identificou que a chave de criptografia é um padrão repetido: `qw8J`.
-Com a chave em mãos, modifiquei o script para criar um novo payload JSON com `"showpassword"=>"yes"`, criptografá-lo com a chave descoberta e codificar em Base64.
+Injetei este novo cookie no navegador (substituindo o valor original na aba Application \> Cookies), recarreguei a página e a senha foi revelada.
 
-O payload gerado foi:
-`ClVLIh4ASCsCBE8lAxMacFMOXTlTWxooFhRXJh4FGnBTVF4sFxFeLBA=`
+### Raciocínio (Vulnerabilidade)
 
-### Obstáculos e Resultado
-Tentei injetar este novo cookie no navegador de diversas formas:
-
-![Tentativa de injeção do cookie](images/natas11-dica3.png)
-
-1. Editando diretamente via Ferramentas de Desenvolvedor (Application Tab).
-2. Interceptando a requisição com Burp Suite e modificando o cabeçalho `Cookie`.
-3. Utilizando Burp Suite
-
-![Tentativa de injeção do cookie](images/tentativanatas11.png)
-
-No entanto, não obtive êxito na exploração final. O servidor continuou carregando os dados padrão ou rejeitando a entrada.
-
-### Hipóteses de Falha
-Acredito que a falha na exploração se deva a um destes fatores técnicos:
-* **Divergência de Formatação JSON:** O PHP local pode estar gerando o JSON com espaçamento diferente do PHP do servidor, alterando o resultado do XOR.
-* **URL Encoding:** O Base64 gerado contém caracteres como `+` ou `=`, que podem estar sendo interpretados incorretamente pelo servidor HTTP se não forem devidamente codificados (ex: `%3D`).
-* **Sobrescrita de Sessão:** O navegador pode estar sobrescrevendo meu cookie manual antes de enviar a requisição.
+A vulnerabilidade é o uso inseguro de criptografia (Weak Cryptography). O algoritmo XOR é rápido, mas não oferece confidencialidade se a chave for reutilizada e o atacante tiver acesso a uma amostra do texto original e do texto cifrado. Além disso, a chave estava "hardcoded" no servidor, mas pôde ser deduzida matematicamente sem acesso ao código-fonte, apenas pela análise dos dados de saída.
 
 ### Pesquisa
-Pesquisei sobre **"Known Plaintext Attack XOR"**, **"PHP json_encode whitespace differences"** e **"Modifying cookies with Burp Suite"**.
+
+Pesquisei sobre **"XOR Cipher Known Plaintext Attack"** e **"PHP json\_encode vulnerability"**.
