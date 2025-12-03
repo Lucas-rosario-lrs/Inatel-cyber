@@ -360,7 +360,7 @@ Ao definir uma cor de fundo, o site salva um cookie chamado `data` contendo um v
 A função `loadData` descriptografa o cookie e verifica o conteúdo de um array JSON:
 `$defaultdata = array( "showpassword"=>"no", "bgcolor"=>"#ffffff");`
 
-![Array Json Hint](images/natas11-dica1.png)
+![Array Json Hint](images/natas11-dica11.png)
 
 Para obter a senha, é necessário alterar o valor `showpassword` de `"no"` para `"yes"`.
 
