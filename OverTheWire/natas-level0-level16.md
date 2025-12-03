@@ -398,17 +398,25 @@ Acessar a senha para o nível 13. O site permite o upload de arquivos JPEG com t
 
 Ao acessar o nível, encontrei um formulário de upload de arquivos.
 
+![Formulário com Input Hidden](images/natas12-dica1.png)
+
 Analisando o código-fonte ("View sourcecode"), notei uma falha crítica na lógica de como o arquivo é salvo. O servidor gera um caminho aleatório, mas concatena a **extensão original** enviada pelo formulário.
+
+![Código Fonte Vulnerável](images/natas12-dica2.png)
 
 A linha `$target_path = makeRandomPathFromFilename("upload", $_POST["filename"]);` usa o parâmetro `filename` vindo do POST para definir a extensão final. Se eu conseguir enviar um arquivo `.php`, o servidor irá executá-lo.
 
 **1. Criação do Payload**
 Criei um script simples chamado `bypass.php` que utiliza a função `passthru` para executar o comando de leitura da senha.
 
+![Script PHP Bypass](images/natas12-bypass.png)
+
 **2. Exploração (Manipulação de Input Oculto)**
 Ao inspecionar o formulário com o DevTools (F12), percebi que o nome do arquivo é enviado em um campo oculto (`input type="hidden" name="filename"`).
 
 Em vez de usar um proxy, manipulei o valor diretamente no navegador:
+
+![Modificando Extensão no DevTools](images/natas12-solucao1.png)
 
 1.  Selecionei o arquivo `bypass.php` no formulário.
 2.  No DevTools, localizei o `input name="filename"`.
@@ -417,9 +425,13 @@ Em vez de usar um proxy, manipulei o valor diretamente no navegador:
 **3. Execução**
 Após clicar em "Upload File", o servidor aceitou o arquivo e mostrou onde ele foi salvo.
 
+![Confirmação de Upload](images/natas12-solucao2.png)
+
 Cliquei no link fornecido pelo site. Como o arquivo tem a extensão `.php`, o servidor executou meu código `passthru` e exibiu o conteúdo do arquivo de senha.
 
-### Raciocínio (Vulnerabilidade)
+![Flag Revelada](images/natas12-flag.png)
+
+### Vulnerabilidade
 
 A vulnerabilidade é **Unrestricted File Upload** combinada com confiança em dados do cliente. O servidor confia no campo `filename` enviado pelo formulário HTML para determinar a extensão do arquivo no disco. Como o HTML pode ser modificado pelo usuário (como mostrado no print), é trivial forçar o salvamento de um arquivo malicioso (`.php`) e obter Execução Remota de Código (RCE).
 
@@ -442,14 +454,16 @@ O servidor agora verifica se o arquivo é realmente uma imagem. Geralmente, essa
 **1. Criação do Payload (Bypass de Magic Bytes)**
 Modifiquei meu script PHP para enganar o servidor. Adicionei a string `GIF89a` no início do arquivo, seguida pelo código PHP malicioso.
 
-O conteúdo do arquivo ficou:
-`GIF89a`
-`<?php passthru('cat /etc/natas_webpass/natas14'); ?>`
+![Payload com Magic Bytes GIF](images/natas13-bypasss.png)
 
 **2. Execução**
 Fiz o upload do arquivo (garantindo novamente que a extensão fosse `.php`, usando a mesma técnica do nível 12 de modificar o input oculto ou interceptar, se necessário). O servidor aceitou o arquivo, acreditando ser uma imagem GIF válida.
 
+![Upload Aceito](images/natas13-solucao1.png)
+
 Ao acessar o link do arquivo "imagem", o interpretador PHP ignorou o cabeçalho `GIF89a` (tratando-o como texto/HTML) e executou o bloco de código `<?php ... ?>` logo em seguida, revelando a senha.
+
+![Flag Revelada](images/natas13-flag.png)
 
 ### Raciocínio (Vulnerabilidade)
 
@@ -472,6 +486,8 @@ Acessar a senha para o nível 15. O site apresenta uma página de login clássic
 Ao acessar o nível, deparei-me com um formulário de autenticação padrão. Tentei credenciais comuns (admin/admin), mas sem sucesso.
 
 Cliquei em "View sourcecode" para entender como a validação de login era feita no back-end. A vulnerabilidade ficou evidente na construção da consulta ao banco de dados (Query SQL).
+
+![Código com SQL Injection](images/natas14-dica.png)
 
 O código vulnerável é:
 
@@ -500,15 +516,73 @@ A query final interpretada pelo banco ficou assim:
 
 Como `1=1` é verdadeiro, o banco de dados retorna o primeiro registro da tabela (geralmente o administrador) e o login é aprovado.
 
+![Payload no Login](images/natas14-solucao.png)
+
 **Execução:**
 Coloquei o payload no campo "Username" e deixei o campo "Password" em branco (pois ele seria comentado de qualquer forma).
 
 Ao clicar em "Login", o site confirmou a autenticação e exibiu a senha do próximo nível.
 
-### Raciocínio (Vulnerabilidade)
+![Flag Revelada](images/natas14-flag.png)
+
+### Vulnerabilidade
 
 A vulnerabilidade é **SQL Injection (SQLi)** Clássica. Ela ocorre quando dados fornecidos pelo usuário interferem na estrutura da consulta SQL. O desenvolvedor usou concatenação de strings em vez de **Prepared Statements** (Declarações Preparadas), que é a forma correta de prevenir esse ataque separando o código SQL dos dados.
 
 ### Pesquisa
 
 Pesquisei sobre **"SQL Injection authentication bypass payload"** e **"SQL comment syntax MySQL"**.
+
+-----
+
+# Natas Level 15
+
+### Objetivo
+
+Acessar a senha para o nível 16. O site apresenta uma ferramenta para verificar a existência de um nome de usuário ("Check for username").
+
+### Solução
+
+Ao analisar o código-fonte ("View sourcecode"), percebi que a vulnerabilidade de SQL Injection ainda existe, mas o comportamento da aplicação mudou em relação ao nível anterior.
+
+A query executada é: `SELECT * from users where username="INPUT"`.
+No entanto, diferentemente do Natas 14, o código **não imprime** o resultado da consulta (não mostra a senha). Ele apenas verifica `mysql_num_rows > 0` e retorna uma mensagem booleana:
+
+  * "This user exists." (Verdadeiro)
+  * "This user doesn't exist." (Falso)
+
+![Código Fonte Blind SQLi](images/natas15-dica.png)
+
+Isso caracteriza uma **Blind SQL Injection (Baseada em Booleanos)**. Não podemos ler os dados diretamente, mas podemos fazer perguntas de "Sim ou Não" para o banco de dados.
+
+Sabemos que o usuário alvo é `natas16`. Precisamos adivinhar a senha caractere por caractere.
+A pergunta SQL que faremos será:
+*"O usuário é natas16 E a senha começa com a letra 'a'?"*
+Payload teórico: `natas16" AND password LIKE BINARY "a%" #`
+
+Se o site responder "This user exists", a primeira letra é 'a'. Se responder "doesn't exist", tentamos 'b', e assim por diante. O operador `BINARY` é crucial para distinguir maiúsculas de minúsculas.
+
+**Automação em Python:**
+Como a senha tem 32 caracteres e existem muitas possibilidades (letras maiúsculas, minúsculas e números), fazer isso manualmente é inviável. Desenvolvi um script em Python utilizando a biblioteca `requests` para automatizar o processo.
+
+![Script Python Automation](images/natas15-script.png)
+
+O script itera por 32 posições. Para cada posição, ele testa todos os caracteres possíveis (`a-z, A-Z, 0-9`). Se a resposta do servidor contiver "This user exists", o script registra o caractere encontrado e passa para o próximo.
+
+**Execução:**
+
+![Execução do Brute Force](images/natas15-bruteforce.png)
+
+Ao rodar o script, ele começou a encontrar a senha letra por letra, confirmando a injeção bem-sucedida.
+
+Após alguns minutos, o script finalizou a execução e apresentou a senha completa.
+
+![Flag Revelada](images/natas15-flag.png)
+
+### Raciocínio
+
+A vulnerabilidade é **Blind SQL Injection (Boolean-based)**. Mesmo que a aplicação não exiba dados do banco de dados na tela (como mensagens de erro ou tabelas), ela "vaza" informações através de suas respostas condicionais (usuário existe ou não). Isso permite que um atacante reconstrua dados sensíveis bit a bit ou caractere a caractere, inferindo a informação baseada na reação da página.
+
+### Pesquisa
+
+Pesquisei sobre **"Blind SQL Injection tutorial"**, **"Python requests brute force SQLi"** e **"MySQL LIKE BINARY case sensitive"**.
