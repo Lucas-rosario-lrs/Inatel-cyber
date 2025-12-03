@@ -359,6 +359,8 @@ Ao definir uma cor de fundo, o site salva um cookie chamado `data` contendo um v
 A função `loadData` descriptografa o cookie e verifica o conteúdo de um array JSON:
 `$defaultdata = array( "showpassword"=>"no", "bgcolor"=>"#ffffff");`
 
+![Array Json Hint](images/natas11-dica.png)
+
 Para obter a senha, é necessário alterar o valor `showpassword` de `"no"` para `"yes"`.
 
 Como a operação XOR é reversível (`A XOR B = C` implica `A XOR C = B`), utilizei um ataque de **Known Plaintext** (Texto Plano Conhecido). Eu possuía:
