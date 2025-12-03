@@ -14,6 +14,7 @@ A página informa que a senha está escondida nela mesma, mas não há nada vis�
 Para isso, inspecionei o código-fonte da página (botão direito -\> Ver código-fonte ou `Ctrl+U`).
 
 ![Flag no Comentário](images/natas0-flag.png)
+
 A senha foi encontrada dentro de um comentário HTML.
 
 ### Vulnerabilidade
@@ -359,7 +360,7 @@ Ao definir uma cor de fundo, o site salva um cookie chamado `data` contendo um v
 A função `loadData` descriptografa o cookie e verifica o conteúdo de um array JSON:
 `$defaultdata = array( "showpassword"=>"no", "bgcolor"=>"#ffffff");`
 
-![Array Json Hint](images/natas11-dica.png)
+![Array Json Hint](images/natas11-dica1.png)
 
 Para obter a senha, é necessário alterar o valor `showpassword` de `"no"` para `"yes"`.
 
