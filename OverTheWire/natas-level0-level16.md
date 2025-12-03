@@ -385,3 +385,130 @@ A vulnerabilidade é o uso inseguro de criptografia (Weak Cryptography). O algor
 ### Pesquisa
 
 Pesquisei sobre **"XOR Cipher Known Plaintext Attack"** e **"PHP json\_encode vulnerability"**.
+
+-----
+
+# Natas Level 12
+
+### Objetivo
+
+Acessar a senha para o nível 13. O site permite o upload de arquivos JPEG com tamanho máximo de 1KB.
+
+### Solução
+
+Ao acessar o nível, encontrei um formulário de upload de arquivos.
+
+Analisando o código-fonte ("View sourcecode"), notei uma falha crítica na lógica de como o arquivo é salvo. O servidor gera um caminho aleatório, mas concatena a **extensão original** enviada pelo formulário.
+
+A linha `$target_path = makeRandomPathFromFilename("upload", $_POST["filename"]);` usa o parâmetro `filename` vindo do POST para definir a extensão final. Se eu conseguir enviar um arquivo `.php`, o servidor irá executá-lo.
+
+**1. Criação do Payload**
+Criei um script simples chamado `bypass.php` que utiliza a função `passthru` para executar o comando de leitura da senha.
+
+**2. Exploração (Manipulação de Input Oculto)**
+Ao inspecionar o formulário com o DevTools (F12), percebi que o nome do arquivo é enviado em um campo oculto (`input type="hidden" name="filename"`).
+
+Em vez de usar um proxy, manipulei o valor diretamente no navegador:
+
+1.  Selecionei o arquivo `bypass.php` no formulário.
+2.  No DevTools, localizei o `input name="filename"`.
+3.  Alterei o valor gerado (que poderia estar como `.jpg`) para garantir que terminasse em `.php` (ex: `8p2go5hbr8.php`).
+
+**3. Execução**
+Após clicar em "Upload File", o servidor aceitou o arquivo e mostrou onde ele foi salvo.
+
+Cliquei no link fornecido pelo site. Como o arquivo tem a extensão `.php`, o servidor executou meu código `passthru` e exibiu o conteúdo do arquivo de senha.
+
+### Raciocínio (Vulnerabilidade)
+
+A vulnerabilidade é **Unrestricted File Upload** combinada com confiança em dados do cliente. O servidor confia no campo `filename` enviado pelo formulário HTML para determinar a extensão do arquivo no disco. Como o HTML pode ser modificado pelo usuário (como mostrado no print), é trivial forçar o salvamento de um arquivo malicioso (`.php`) e obter Execução Remota de Código (RCE).
+
+### Pesquisa
+
+Pesquisei sobre **"Bypassing file upload extension check"** e **"Modifying hidden input fields DevTools"**.
+
+-----
+
+# Natas Level 13
+
+### Objetivo
+
+Acessar a senha para o nível 14. Este nível é similar ao anterior, mas adiciona uma verificação de segurança: "For security reasons, we now only accept image files\!".
+
+### Solução
+
+O servidor agora verifica se o arquivo é realmente uma imagem. Geralmente, essa verificação é feita lendo os "Magic Bytes" (os primeiros bytes do arquivo que identificam o formato). Para arquivos GIF, o cabeçalho é `GIF89a`.
+
+**1. Criação do Payload (Bypass de Magic Bytes)**
+Modifiquei meu script PHP para enganar o servidor. Adicionei a string `GIF89a` no início do arquivo, seguida pelo código PHP malicioso.
+
+O conteúdo do arquivo ficou:
+`GIF89a`
+`<?php passthru('cat /etc/natas_webpass/natas14'); ?>`
+
+**2. Execução**
+Fiz o upload do arquivo (garantindo novamente que a extensão fosse `.php`, usando a mesma técnica do nível 12 de modificar o input oculto ou interceptar, se necessário). O servidor aceitou o arquivo, acreditando ser uma imagem GIF válida.
+
+Ao acessar o link do arquivo "imagem", o interpretador PHP ignorou o cabeçalho `GIF89a` (tratando-o como texto/HTML) e executou o bloco de código `<?php ... ?>` logo em seguida, revelando a senha.
+
+### Raciocínio (Vulnerabilidade)
+
+A vulnerabilidade é o **Bypass de Verificação de Conteúdo**. Validar um arquivo apenas pelos seus "Magic Bytes" (cabeçalho) não impede que ele contenha código malicioso executável. O servidor aceitou o arquivo como imagem, mas o salvou com extensão `.php` (ou a configuração do servidor permitiu execução), levando ao RCE.
+
+### Pesquisa
+
+Pesquisei sobre **"Magic bytes file upload bypass"** e **"PHP shell inside GIF image"**.
+
+-----
+
+# Natas Level 14
+
+### Objetivo
+
+Acessar a senha para o nível 15. O site apresenta uma página de login clássica solicitando "Username" e "Password".
+
+### Solução
+
+Ao acessar o nível, deparei-me com um formulário de autenticação padrão. Tentei credenciais comuns (admin/admin), mas sem sucesso.
+
+Cliquei em "View sourcecode" para entender como a validação de login era feita no back-end. A vulnerabilidade ficou evidente na construção da consulta ao banco de dados (Query SQL).
+
+O código vulnerável é:
+
+```php
+$query = "SELECT * from users where username=\"".$_REQUEST["username"]."\" and password=\"".$_REQUEST["password"]."\"";
+```
+
+O PHP concatena diretamente o que o usuário digita dentro da string SQL, sem qualquer sanitização ou uso de Prepared Statements. Isso permite a **Injeção de SQL (SQL Injection)**.
+
+**A Lógica do Ataque:**
+A query original espera algo como:
+`SELECT * FROM users WHERE username="usuario" AND password="senha"`
+
+Meu objetivo é manipular a lógica para que a condição `WHERE` seja sempre **verdadeira**, independentemente da senha.
+
+**O Payload:**
+Utilizei o seguinte payload no campo de Username:
+`" OR 1=1 #`
+
+  * `"`: Fecha a aspa dupla que o código abriu para o nome de usuário.
+  * `OR 1=1`: Adiciona uma condição lógica que é sempre verdadeira (1 é sempre igual a 1).
+  * `#`: É o caractere de comentário em SQL. Isso faz com que o banco de dados ignore todo o resto da query (incluindo a verificação de senha e a aspa final).
+
+A query final interpretada pelo banco ficou assim:
+`SELECT * FROM users WHERE username="" OR 1=1 # AND password="..."`
+
+Como `1=1` é verdadeiro, o banco de dados retorna o primeiro registro da tabela (geralmente o administrador) e o login é aprovado.
+
+**Execução:**
+Coloquei o payload no campo "Username" e deixei o campo "Password" em branco (pois ele seria comentado de qualquer forma).
+
+Ao clicar em "Login", o site confirmou a autenticação e exibiu a senha do próximo nível.
+
+### Raciocínio (Vulnerabilidade)
+
+A vulnerabilidade é **SQL Injection (SQLi)** Clássica. Ela ocorre quando dados fornecidos pelo usuário interferem na estrutura da consulta SQL. O desenvolvedor usou concatenação de strings em vez de **Prepared Statements** (Declarações Preparadas), que é a forma correta de prevenir esse ataque separando o código SQL dos dados.
+
+### Pesquisa
+
+Pesquisei sobre **"SQL Injection authentication bypass payload"** e **"SQL comment syntax MySQL"**.
