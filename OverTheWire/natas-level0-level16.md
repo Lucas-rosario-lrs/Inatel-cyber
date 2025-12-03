@@ -320,19 +320,18 @@ Pesquisei sobre **"PHP passthru command injection"** e **"Linux shell command se
 ### Objetivo
 
 Acessar a senha para o nível 11. O site filtra certos caracteres de comando.
+![Aviso de Filtro](images/natas10.dica1.png)
 
 ### Solução
 
 A interface avisa que agora filtra certos caracteres por segurança.
 
-![Aviso de Filtro](images/natas10.dica1.png)
-
 O código-fonte mostra um filtro regex `/[;|&]/` que bloqueia `;`, `|` e `&`.
+
+![Regex no Código](images/natas10-dica2.png)
 
 Como não podemos começar um novo comando, manipulamos os argumentos do `grep`. Forçamos o grep a ler o arquivo de senha passando-o como argumento extra.
 Payload: `.* /etc/natas_webpass/natas11`
-
-![Regex no Código](images/natas10-dica2.png)
 
 Isso fez com que o `grep` imprimisse todo o conteúdo do arquivo de senha.
 
