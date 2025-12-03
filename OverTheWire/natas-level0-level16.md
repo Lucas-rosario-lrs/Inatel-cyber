@@ -172,9 +172,9 @@ A página exibe a mensagem "Access disallowed. You are not logged in" (Acesso ne
 
 Abri as ferramentas de desenvolvedor (F12) e naveguei até a aba **Application** (ou Storage) para inspecionar os cookies armazenados pelo site.
 
-![Cookie Alterado](images/natas5-flag.png)
-
 Encontrei um cookie chamado `loggedin` com o valor `0`. Editei o valor do cookie `loggedin` de `0` para `1` diretamente no navegador e recarreguei a página. O servidor leu o novo valor do cookie, assumiu que eu estava autenticado e exibiu a senha.
+
+![Cookie Alterado](images/natas5-flag.png)
 
 ### Raciocínio
 
